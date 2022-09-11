@@ -28,7 +28,7 @@ module.exports.login = (req, res, next) => {
               maxAge: 3600000 * 24 * 7,
               sameSite: 'None',
               secure: 'True',
-              domain: '.moviephile.nomoredomains.sbs',
+              // domain: '.moviephile.nomoredomains.sbs',
             })
             .header('Access-Control-Allow-Credentials', true)
             .send({ message: 'token created' });
@@ -53,7 +53,7 @@ module.exports.createUser = (req, res, next) => {
     .then((hash) => User.create({
       name, email, password: hash,
     }))
-    .then((user) => res.header('Access-Control-Allow-Credentials', true).send(user))
+    .then((user) => res.header('Access-Control-Allow-Credentials', true).send({ name: user.name, email: user.email }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
@@ -77,6 +77,9 @@ module.exports.patchUserInfo = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return next(new BadRequestError('Переданы некорректные данные при обновлении профиля'));
+      }
+      if (err.code === 11000) {
+        return next(new ConflictError('Пользователь с данным e-mail существует'));
       }
       return next(err);
     });

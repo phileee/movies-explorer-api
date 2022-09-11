@@ -6,10 +6,11 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
-const { celebrate, Joi, errors } = require('celebrate');
+const { errors } = require('celebrate');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
+const signUser = require('./routes/sign');
 const routers = require('./routes/routers');
-const { login, createUser } = require('./controllers/users');
+
 const auth = require('./middlewares/auth');
 const middlewareError = require('./middlewares/middleware-errors');
 const NotFoundError = require('./errors/not-found-err');
@@ -39,30 +40,17 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(requestLogger);
 
-app.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }),
-}), login);
-
-app.post('/signup', celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().min(2).max(30).required(),
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }),
-}), createUser);
+app.use(signUser);
 
 app.use(auth, routers);
 
-app.get('/signout', (req, res, next) => {
+app.get('/signout', auth, (req, res, next) => {
   try {
     return res
       .clearCookie('jwt', {
         sameSite: 'None',
         secure: 'True',
-        domain: '.moviephilenomoredomains.sbs',
+        // domain: '.moviephile.nomoredomains.sbs',
       })
       .header({
         'Access-Control-Allow-Credentials': 'true',
